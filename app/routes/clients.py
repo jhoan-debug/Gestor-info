@@ -219,3 +219,31 @@ def listar_cumpleanos_mes_actual(db: Session = Depends(get_db)):
     clientes = db.query(models.Cliente).filter(models.Cliente.fecha_cumpleanos != None).all()
     return [c for c in clientes if c.fecha_cumpleanos.month == hoy.month]
 
+@router.get("/cumpleanos-proximos")
+def proximos_cumpleanos(db: Session = Depends(get_db)):
+    hoy = date.today()
+    clientes = db.query(models.Cliente).all()
+    proximos = []
+
+    for c in clientes:
+        if not c.fecha_cumpleanos:
+            continue
+
+        cumple = c.fecha_cumpleanos.replace(year=hoy.year)
+
+        # si ya pasó este año → lo movemos al próximo
+        if cumple < hoy:
+            cumple = cumple.replace(year=hoy.year + 1)
+
+        dias = (cumple - hoy).days
+
+        if 0 <= dias <= 7:  # próximos 7 días
+            proximos.append({
+                "id": c.id,
+                "nombre": c.nombre,
+                "apellido": c.apellido,
+                "dias": dias,
+                "fecha": c.fecha_cumpleanos
+            })
+
+    return sorted(proximos, key=lambda x: x["dias"])

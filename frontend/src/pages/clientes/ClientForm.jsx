@@ -85,6 +85,7 @@ export default function ClientForm({ onCreated, api }) {
       </select>
     </div>
   );
+  
 
   return (
     <div className="bg-panel p-6 rounded-lg shadow-glow-amber animate-fade-in-up backdrop-blur-sm"> {/* Agregué bg-panel para fondo uniforme */}

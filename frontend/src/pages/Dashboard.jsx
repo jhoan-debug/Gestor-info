@@ -1,6 +1,7 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api";
+import BirthdayPopup from "../components/BirthdayPopup";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -10,9 +11,12 @@ export default function Dashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [cumplePopup, setCumplePopup] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     fetchStats();
+    fetchCumples();
   }, []);
 
   const fetchStats = async () => {
@@ -20,9 +24,21 @@ export default function Dashboard() {
       const res = await api.get("/stats/dashboard");
       setStats(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Error al cargar estadísticas:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCumples = async () => {
+    try {
+      const res = await api.get("/clientes/cumpleanos-proximos");
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setCumplePopup(res.data);
+        setShowPopup(true);
+      }
+    } catch (err) {
+      console.error("Error al cargar cumpleaños:", err);
     }
   };
 
@@ -36,6 +52,14 @@ export default function Dashboard() {
 
   return (
     <div className="p-5 text-brand animate-fade-in-up">
+
+      {/* POPUP DE CUMPLEAÑOS */}
+      {showPopup && (
+        <BirthdayPopup
+          birthdays={cumplePopup}  // Cambié de 'birthdays' a 'cumplePopup' para que coincida con el estado
+          onClose={() => setShowPopup(false)}
+        />
+      )}
 
       {/* TITULAR */}
       <h1 className="text-3xl font-bold mb-1 animate-slide-left">
