@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 
 # --> Este archivo contiene todas las funciones que realizan las operaciones en la base de datos.
-# --> "CRUD" significa: Crear, Leer, Actualizar y Eliminar (Create, Read, Update, Delete).
+# --> "CRUD" (Create, Read, Update, Delete).
 
 def create_cliente(db: Session, cliente: schemas.ClienteCreate, archivo: str = None):
     db_cliente = models.Cliente(**cliente.dict(), archivo=archivo)
@@ -17,7 +17,7 @@ def buscar_cliente_por_documento(db: Session, documento: str):
     return db.query(models.Cliente).filter(models.Cliente.documento == documento).first()
 
 def obtener_clientes(db: Session, skip: int = 0, limit: int = 10):
-    # --> Devuelve una lista limitada de clientes (paginación básica).
+    # --> Devuelve una lista limitada de clientes.
     return db.query(models.Cliente).offset(skip).limit(limit).all()
 
 def buscar_clientes(db: Session, nombre: str = None, documento: str = None, telefono: str = None):

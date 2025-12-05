@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional
-from datetime import date  # --> Importa para validar fechas
+from datetime import date, datetime
 
 class ClienteBase(BaseModel):
     nombre: str
@@ -31,11 +31,32 @@ class ClienteBase(BaseModel):
     
     fecha_cumpleanos: date | None = None
 
+    # Agrega el validador aquí, indentado correctamente (4 espacios bajo la clase)
+    @validator('fecha_cumpleanos', pre=True, always=True)
+    def parse_fecha_cumpleanos(cls, v):
+        if v is None or v == "" or v == "None":
+            return None
+        if isinstance(v, str):
+            # Intenta formatos comunes: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY
+            for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y']:
+                try:
+                    return datetime.strptime(v, fmt).date()
+                except ValueError:
+                    continue
+            raise ValueError(f'Formato de fecha inválido: {v}. Usa YYYY-MM-DD, DD/MM/YYYY o DD-MM-YYYY.')
+        return v
+
 class ClienteCreate(ClienteBase):
     pass
 
 class ClienteOut(ClienteBase):
     id: int
+
+class CumpleanosProximo(BaseModel):
+    id: int
+    nombre: str
+    apellido: str
+    dias: int
 
     class Config:
         orm_mode = True

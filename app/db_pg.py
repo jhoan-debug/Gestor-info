@@ -28,11 +28,11 @@ def create_database_if_not_exists():
         exists = cur.fetchone()
         if not exists:
             cur.execute(f"CREATE DATABASE {DB_NAME}")
-            print(f"✅ Base de datos '{DB_NAME}' creada correctamente")
+            print(f"Base de datos '{DB_NAME}' creada correctamente")
         cur.close()
         conn.close()
     except Exception as e:
-        print("❌ Error creando la base de datos:", e)
+        print("Error creando la base de datos:", e)
 
 create_database_if_not_exists()
 

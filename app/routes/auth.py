@@ -18,7 +18,7 @@ def get_db():
 
 @router.post("/")
 def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # Ejemplo simple: credenciales fijas (puedes usar una tabla real)
+    # credenciales fijas
     if username != "admin" or password != "1234":
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 

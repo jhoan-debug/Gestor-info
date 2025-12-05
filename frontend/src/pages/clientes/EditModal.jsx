@@ -1,4 +1,3 @@
-// src/pages/clientes/EditModal.jsx
 import React, { useState, useEffect } from "react";
 
 export default function EditModal({ cliente, onClose, onSaved, sharedLists, api }) {

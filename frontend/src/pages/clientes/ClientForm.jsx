@@ -1,4 +1,3 @@
-// src/pages/clientes/ClientForm.jsx
 import React, { useState } from "react";
 
 export default function ClientForm({ onCreated, api }) {
@@ -30,6 +29,22 @@ export default function ClientForm({ onCreated, api }) {
     observaciones: "",
     archivo: null,
   };
+
+function normalizeDate(fechaStr) {
+  if (!fechaStr) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+    return fechaStr;
+  }
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaStr)) {
+    const [dia, mes, año] = fechaStr.split("/");
+    return `${año}-${mes}-${dia}`;
+  }
+
+  return null;
+}
+
 
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,3 @@
-// src/pages/Clientes.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api";
 
@@ -64,7 +63,7 @@ export default function Clientes() {
           <div className="bg-panel border border-brand/10 rounded-xl p-8 shadow-glow-amber animate-fade-in-up transition-all duration-300 w-full">
             <ClientForm
               onCreated={() => {
-                flash("✅ Cliente registrado correctamente");
+                flash("✅ Cliente registrado exitosamente!");
               }}
               api={api}
               sharedLists={sharedLists}

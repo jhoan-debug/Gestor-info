@@ -1,4 +1,3 @@
-// src/pages/clientes/ClientTable.jsx
 import React from "react";
 import { Eye, Edit2, Trash2, Download } from "lucide-react";
 
@@ -21,7 +20,7 @@ export default function ClientTable({
   archivoUrl = () => null,
   searchTerm = "",
 }) {
-  // helper: resalta coincidencias (simple)
+  // helper
   const highlight = (text = "") => {
     if (!searchTerm) return text;
     const s = String(text);

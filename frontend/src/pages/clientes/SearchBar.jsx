@@ -1,4 +1,3 @@
-// src/pages/clientes/SearchModal.jsx
 import React from "react";
 
 export default function SearchModal({ busqueda, setBusqueda, onBuscar, onClose }) {
@@ -13,7 +12,7 @@ export default function SearchModal({ busqueda, setBusqueda, onBuscar, onClose }
             onClick={onClose}
             className="text-brand-dark hover:text-brand transition animate-pulse-amber animation-delay-200" // Agregué animación sutil
           >
-            ✕
+            
           </button>
         </div>
 

@@ -1,4 +1,3 @@
-// src/pages/clientes/ViewModal.jsx
 import React from "react";
 
 export default function ViewModal({ cliente, onClose, archivoUrl }) {

@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime, Date  # --> Añade Date
+from sqlalchemy import Column, Integer, String, DateTime, Date 
 from sqlalchemy.sql import func
-from app.db_pg import Base  # Asegúrate de importar Base desde el archivo correcto
+from app.db_pg import Base 
 
 class Cliente(Base):
     __tablename__ = "clientes"

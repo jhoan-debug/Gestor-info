@@ -1,6 +1,5 @@
-// src/pages/clientes/SearchModal.jsx
 import React, { useState } from "react";
-import ClientTable from "./ClientTable"; // Importa ClientTable aquí
+import ClientTable from "./ClientTable";
 
 export default function SearchModal({
   onClose,
@@ -9,16 +8,14 @@ export default function SearchModal({
   onEliminar, // Callback para eliminar cliente
   api,        // Para hacer la búsqueda
   archivoUrl, // Función para URLs de archivos
-  sharedLists // Si lo necesitas para algo, pero probablemente no aquí
 }) {
   const [busqueda, setBusqueda] = useState("");
   const [resultados, setResultados] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState(""); // Para mensajes de error/flash
+  const [msg, setMsg] = useState("");
 
   const handleBuscar = async () => {
     if (!busqueda.trim()) {
-      // Si no hay búsqueda, carga todos los clientes
       try {
         setLoading(true);
         const res = await api.get("/clientes/");
@@ -98,7 +95,7 @@ export default function SearchModal({
           onEditar={onEditar}
           onEliminar={onEliminar}
           archivoUrl={archivoUrl}
-          searchTerm={busqueda} // Para resaltar coincidencias en ClientTable
+          searchTerm={busqueda}
         />
 
       </div>
