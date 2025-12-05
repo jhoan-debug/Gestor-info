@@ -1,0 +1,54 @@
+/* postcss */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Variables si quieres */
+:root{
+  --brand: #FFD700;
+  --brand-dark: #c9b24a;
+  --bg: #0b0b0b;
+  --panel: #070707;
+}
+
+/* Small helpers */
+.btn-primary{
+  @apply bg-brand text-black font-semibold rounded-md px-3 py-2;
+}
+.card {
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid rgba(255,215,0,0.06);
+  box-shadow: 0 8px 24px rgba(255,215,0,0.04);
+}
+
+/* Si quieres clases utilitarias predefinidas */
+.fade-up { animation: fade-in-up .35s ease-out both; }
+.pulse-amber { animation: pulse-amber 2s ease-in-out infinite; }
+
+/* Small responsive tweaks (opcional) */
+@media (max-width: 768px){
+  .grid-2cols { grid-template-columns: 1fr; }
+}
+
+
+/* Suavizar scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animación suave para contenedores */
+.fade {
+  @apply animate-fade-in-up;
+}
+
+.input-modern {
+  @apply bg-zinc-900 text-white border border-zinc-700 rounded-lg px-3 py-2 w-full
+         focus:border-brand focus:ring-1 focus:ring-brand transition;
+}
+
+.input-dark {
+  @apply bg-neutral-900 border border-brand/10 rounded-lg p-3 text-brand
+         focus:border-brand focus:outline-none transition-all duration-200;
+}

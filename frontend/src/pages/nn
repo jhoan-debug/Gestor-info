@@ -1,0 +1,178 @@
+import React, { useState, useEffect } from "react";
+import api from "../api";
+
+export default function Clientes() {
+  const [clientes, setClientes] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // --- Formularios ---
+  const [form, setForm] = useState({
+    nombre: "", apellido: "", documento: "", telefono: "",
+    correo: "", direccion: "", observaciones: "", fechaNacimiento: "",
+    odEsfera: "", odCilindro: "", odEje: "", odAdd: "", odDp: "", odAlt: "", odPrisma: "",
+    oiEsfera: "", oiCilindro: "", oiEje: "", oiAdd: "", oiDp: "", oiAlt: "", oiPrisma: ""
+  });
+
+  const [archivo, setArchivo] = useState(null);
+
+  // --- Modal de ver / editar ---
+  const [verCliente, setVerCliente] = useState(null);
+  const [editarCliente, setEditarCliente] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [editArchivo, setEditArchivo] = useState(null);
+
+  useEffect(() => { fetchClientes(); }, []);
+
+  const fetchClientes = async () => {
+    try {
+      const res = await api.get("/clientes/");
+      setClientes(res.data || []);
+    } catch {
+      setMsg("No se pudo obtener clientes");
+    }
+  };
+
+  const handleFormChange = (k, v) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const registrarCliente = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k.replace(/[A-Z]/g, m => "_" + m.toLowerCase()), v));
+      if (archivo) fd.append("archivo", archivo);
+
+      await api.post("/clientes/", fd);
+      setMsg("Cliente registrado");
+
+      fetchClientes();
+      setForm({
+        nombre: "", apellido: "", documento: "", telefono: "",
+        correo: "", direccion: "", observaciones: "", fechaNacimiento: "",
+        odEsfera: "", odCilindro: "", odEje: "", odAdd: "", odDp: "", odAlt: "", odPrisma: "",
+        oiEsfera: "", oiCilindro: "", oiEje: "", oiAdd: "", oiDp: "", oiAlt: "", oiPrisma: ""
+      });
+    } catch {
+      setMsg("Error al registrar");
+    }
+    setLoading(false);
+
+    setTimeout(() => setMsg(""), 3000);
+  };
+
+  return (
+    <div className="p-6 text-brand fade">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold animate-slide-left">Clientes</h1>
+
+        <div className="flex gap-2">
+          <input
+            placeholder="Buscar..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-neutral-900 border border-brand/20 text-brand focus:outline-none w-60"
+          />
+          <button
+            onClick={() => {}}
+            className="px-4 py-2 rounded-lg bg-brand text-black font-semibold hover:bg-brand-dark transition">
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      {msg && (
+        <div className="bg-brand text-black px-4 py-2 rounded-md mb-4 animate-fade-in-up">
+          {msg}
+        </div>
+      )}
+
+      {/* FORM DE REGISTRO */}
+      <form
+        onSubmit={registrarCliente}
+        className="bg-panel border border-brand/10 rounded-xl p-5 shadow-glow-amber fade mb-6"
+      >
+        <h2 className="text-xl text-brand-dark mb-4 font-semibold">Registrar cliente</h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {["nombre","apellido","documento","telefono","correo","direccion"].map((field) => (
+            <input
+              key={field}
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={form[field]}
+              onChange={(e) => handleFormChange(field, e.target.value)}
+              className="px-3 py-2 bg-neutral-900 border border-brand/20 rounded-lg text-brand focus:outline-none"
+            />
+          ))}
+
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <select
+            value={form.odEsfera}
+            onChange={(e) => handleFormChange("odEsfera", e.target.value)}
+            className="px-3 py-2 bg-neutral-900 border border-brand/20 rounded-lg text-brand">
+            <option value="">OD Esfera</option>
+            <option>-0.25</option><option>-0.50</option><option>0.00</option><option>+0.25</option><option>+0.50</option>
+          </select>
+
+          <select
+            value={form.odAdd}
+            onChange={(e) => handleFormChange("odAdd", e.target.value)}
+            className="px-3 py-2 bg-neutral-900 border border-brand/20 rounded-lg text-brand">
+            <option>OD ADD</option>
+          </select>
+
+          <input
+            type="file"
+            onChange={(e) => setArchivo(e.target.files?.[0])}
+            className="text-sm text-brand"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="mt-5 px-5 py-2 rounded-lg bg-brand text-black font-semibold hover:bg-brand-dark transition w-full md:w-auto">
+          {loading ? "Guardando..." : "Registrar"}
+        </button>
+      </form>
+
+      {/* TABLA CLIENTES */}
+      <div className="bg-panel border border-brand/10 rounded-lg shadow-glow-amber fade">
+        <table className="w-full">
+          <thead>
+            <tr className="text-brand-dark border-b border-brand/10 text-left">
+              <th className="p-3">Cliente</th>
+              <th className="p-3">Documento</th>
+              <th className="p-3">Teléfono</th>
+              <th className="p-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clientes.map((c) => (
+              <tr
+                key={c.id}
+                className="border-t border-brand/5 hover:bg-neutral-900/40 transition"
+              >
+                <td className="p-3">{c.nombre} {c.apellido}</td>
+                <td className="p-3">{c.documento}</td>
+                <td className="p-3">{c.telefono}</td>
+                <td className="p-3 flex gap-3">
+                  <button className="text-brand-dark hover:text-brand transition">Ver</button>
+                  <button className="text-blue-400 hover:text-blue-300 transition">Editar</button>
+                  <button className="text-red-500 hover:text-red-400 transition">Eliminar</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
