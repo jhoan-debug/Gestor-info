@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 
+// Muestra popup de cumpleaños próximos y reproduce sonido si aplica.
 export default function BirthdayPopup({ birthdays, onClose }) {
   useEffect(() => {
     // reproducir sonido solo si hay cumpleaños

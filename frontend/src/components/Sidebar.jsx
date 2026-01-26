@@ -1,6 +1,7 @@
 import { Home, Users, FileText, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Sidebar: botones de navegación y control de cierre de sesión.
 export default function Sidebar({ setVista, handleLogout }) {
   return (
     <div className="h-screen w-64 bg-black text-yellow-400 border-r border-yellow-500 flex flex-col justify-between shadow-[0_0_15px_rgba(255,215,0,0.4)]">

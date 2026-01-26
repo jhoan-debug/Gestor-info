@@ -9,6 +9,7 @@ router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
 @router.get("/cumpleanos")
 def obtener_cumpleanos(db: Session = Depends(get_db)):
+    # Obtiene clientes con cumpleaños en el mes actual.
     hoy = date.today()
     mes_actual = f"{hoy.month:02d}"
     # Para SQLite uso strftime para extraer mes 
@@ -20,6 +21,7 @@ def obtener_cumpleanos(db: Session = Depends(get_db)):
 
 @router.get("/estadisticas")
 def obtener_estadisticas(db: Session = Depends(get_db)):
+    # Calcula estadísticas simples sobre los clientes (totales y por mes).
     total_clientes = db.query(Cliente).count()
     # clientes registrados desde inicio de mes (para sqlite uso date compare)
     inicio_mes = datetime.now().replace(day=1)

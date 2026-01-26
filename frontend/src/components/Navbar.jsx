@@ -1,7 +1,9 @@
 // src/components/Navbar.jsx
 import React from "react";
 
+// Navbar: componente lateral que muestra botones de navegación.
 export default function Navbar({ page, onNavigate, onLogout }) {
+  // Helper: genera un botón de navegación con estilo según la vista.
   const btn = (label, id) => (
     <button
       onClick={() => onNavigate(id)}

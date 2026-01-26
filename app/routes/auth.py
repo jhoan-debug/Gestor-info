@@ -10,6 +10,7 @@ ALGORITHM = "HS256"
 router = APIRouter(prefix="/login", tags=["Autenticación"])
 
 def get_db():
+    # Dependencia que proporciona una sesión de base de datos para los endpoints.
     db = SessionLocal()
     try:
         yield db
@@ -18,6 +19,7 @@ def get_db():
 
 @router.post("/")
 def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+    # Endpoint de login: valida credenciales y emite un JWT si son válidas.
     # credenciales fijas
     if username != "admin" or password != "1234":
         raise HTTPException(status_code=401, detail="Credenciales inválidas")

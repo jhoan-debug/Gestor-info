@@ -19,6 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # Mueve endpoints específicos arriba
 @router.get("/cumpleanos-proximos", response_model=list[schemas.CumpleanosProximo])
 def proximos_cumpleanos(db: Session = Depends(get_db)):
+    # Lista clientes con cumpleaños en los próximos 7 días.
     hoy = date.today()
     clientes = db.query(models.Cliente).all()
     proximos = []
@@ -36,22 +37,24 @@ def proximos_cumpleanos(db: Session = Depends(get_db)):
 
         if 0 <= dias <= 7:  # Próximos 7 días
             proximos.append({
-                "id": c.id,
-                "nombre": c.nombre,
+                "nombre": c.nombre,  # Campos directos, sin id
                 "apellido": c.apellido,
-                "dias": dias
+                "dias": dias,
+                "fecha_cumpleanos": c.fecha_cumpleanos.strftime("%Y-%m-%d") if c.fecha_cumpleanos else None  # Añade fecha para edades
             })
 
     return sorted(proximos, key=lambda x: x["dias"])
 
 @router.get("/cumpleanos", response_model=list[schemas.ClienteOut])
 def listar_cumpleanos_mes_actual(db: Session = Depends(get_db)):
+    # Lista clientes cuyo cumpleaños cae en el mes actual.
     hoy = date.today()
     clientes = db.query(models.Cliente).filter(models.Cliente.fecha_cumpleanos != None).all()
     return [c for c in clientes if c.fecha_cumpleanos.month == hoy.month]
 
 @router.get("/archivo/{filename}")
 def descargar_archivo(filename: str):
+    # Devuelve un archivo subido si existe en el directorio de uploads.
     path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Archivo no encontrado")
@@ -81,18 +84,30 @@ async def create_cliente(
     oi_dp: Optional[str] = Form(None),
     oi_alt: Optional[str] = Form(None),
     oi_prisma: Optional[str] = Form(None),
-    fecha_cumpleanos: Optional[date] = Form(None),
-    archivo: UploadFile | None = File(None),
+    tipo_lente: Optional[str] = Form(None),
+    tratamiento_lente: Optional[str] = Form(None),
+    laboratorio: Optional[str] = Form(None),
+    precio: Optional[int] = Form(None),
+
+    tiene_factura: Optional[bool] = Form(False),
+    numero_factura: Optional[str] = Form(None),
+
+    fecha_cumpleanos: Optional[str] = Form(None),
+    archivo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
+    ##fecha_cumpleanos = cliente.fecha_cumpleanos if cliente.fecha_cumpleanos else None  # Solo asigna si tiene valor
+    nuevo_cliente = models.Cliente(
+        # ... otros campos
+            fecha_cumpleanos=fecha_cumpleanos  # Si es None, se guarda como null (aceptable para opcional)
+)
+    # Crea un cliente desde un formulario y guarda el archivo opcional.
     filename = None
     if archivo:
-        unique_name = f"{date.today().strftime('%Y%m%d')}_{archivo.filename}"
-        filepath = os.path.join(UPLOAD_DIR, unique_name)
-        with open(filepath, "wb") as f:
-            content = await archivo.read()
-            f.write(content)
-        filename = unique_name
+        filename = archivo.filename
+        path = os.path.join(UPLOAD_DIR, filename)
+        with open(path, "wb") as f:
+            f.write(await archivo.read())
 
     data = schemas.ClienteCreate(
         nombre=nombre,
@@ -116,13 +131,20 @@ async def create_cliente(
         oi_dp=oi_dp,
         oi_alt=oi_alt,
         oi_prisma=oi_prisma,
-        fecha_cumpleanos=fecha_cumpleanos
+        tipo_lente=tipo_lente,
+        tratamiento_lente=tratamiento_lente,
+        laboratorio=laboratorio,
+        precio=precio,
+        tiene_factura=tiene_factura,
+        numero_factura=numero_factura,
+        fecha_cumpleanos=fecha_cumpleanos  # Ya es opcional, no necesitas manipularlo
     )
 
     return crud.create_cliente(db, data, archivo=filename)
 
 @router.get("/", response_model=list[schemas.ClienteOut])
 def obtener_clientes(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    # Endpoint para obtener una lista paginada de clientes.
     return crud.obtener_clientes(db, skip=skip, limit=limit)
 
 @router.get("/buscar", response_model=list[schemas.ClienteOut])
@@ -132,6 +154,7 @@ def buscar_clientes(
     telefono: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    # Busca clientes por nombre, documento o teléfono y retorna coincidencias.
     resultados = crud.buscar_clientes(db, nombre=nombre, documento=documento, telefono=telefono)
     if not resultados:
         raise HTTPException(status_code=404, detail="No se encontraron clientes")
@@ -161,18 +184,23 @@ async def actualizar_cliente(
     oi_dp: Optional[str] = Form(None),
     oi_alt: Optional[str] = Form(None),
     oi_prisma: Optional[str] = Form(None),
+    tipo_lente: Optional[str] = Form(None),
+    tratamiento_lente: Optional[str] = Form(None),
+    laboratorio: Optional[str] = Form(None),
+    precio: Optional[int] = Form(None),
+    tiene_factura: Optional[bool] = Form(False),
+    numero_factura: Optional[str] = Form(None),
     fecha_cumpleanos: Optional[date] = Form(None),
-    archivo: UploadFile | None = File(None),
+    archivo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
+    # Actualiza un cliente desde un formulario y guarda archivo si se proporciona.
     filename = None
     if archivo:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{archivo.filename}"
+        filename = archivo.filename
         path = os.path.join(UPLOAD_DIR, filename)
         with open(path, "wb") as f:
-            content = await archivo.read()
-            f.write(content)
+            f.write(await archivo.read())
 
     datos = schemas.ClienteCreate(
         nombre=nombre,
@@ -206,6 +234,7 @@ async def actualizar_cliente(
 
 @router.get("/{cliente_id}", response_model=schemas.ClienteOut)
 def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    # Obtiene un cliente por su ID.
     cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -213,6 +242,7 @@ def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
 
 @router.delete("/{cliente_id}")
 def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    # Elimina un cliente por ID.
     eliminado = crud.eliminar_cliente(db, cliente_id)
     if not eliminado:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")

@@ -11,7 +11,7 @@ function Login({ onLogin }) {
   // --> Función que valida si el usuario y la clave son correctos.
   const handleLogin = (e) => {
     e.preventDefault();
-    if (usuario === "admin" && clave === "1234") {
+    if (usuario === "admin" && clave === "124") {
       onLogin(); // --> Si son correctos, entra al panel principal.
     } else {
       setError("Credenciales incorrectas."); // --> Muestra error si no coinciden.

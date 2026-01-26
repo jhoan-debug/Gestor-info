@@ -9,5 +9,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    server: {
+    host: 'Mundo Optico',  // Cambia esto al nombre que pusiste en hosts
+  },
   },
 })

@@ -37,22 +37,22 @@ export default function ClientTable({
 
   return (
     <div className="bg-panel border border-brand/10 rounded-lg shadow-glow-amber animate-fade-in-up overflow-auto">
-      {/* responsive wrapper */}
-      <div className="w-full min-w-[700px]">
+      {/* responsive wrapper - ancho ajustado para eliminar barra horizontal */}
+      <div className="w-full min-w-[800px]">
         {/* header row small */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-brand/8">
           <div className="text-sm text-brand-dark font-semibold">Lista de clientes</div>
           <div className="text-xs text-muted-foreground/60">{clientes.length} resultados</div>
         </div>
 
-        {/* TABLE */}
-        <table className="w-full table-fixed">
+        {/* TABLE - cambiado a table-auto para ajuste dinámico */}
+        <table className="w-full table-auto">
           <thead>
             <tr className="text-brand-dark border-b border-brand/10 text-left">
-              <th className="p-3 w-2/5">Cliente</th>
-              <th className="p-3 w-1/5 hidden sm:table-cell">Documento</th>
-              <th className="p-3 w-1/5 hidden md:table-cell">Teléfono</th>
-              <th className="p-3 w-1/5">Acciones</th>
+              <th className="p-4">Cliente</th> {/* Sin ancho fijo */}
+              <th className="p-4 hidden sm:table-cell">Documento</th>
+              <th className="p-4 hidden md:table-cell">Teléfono</th>
+              <th className="p-4">Acciones</th>
             </tr>
           </thead>
 
@@ -62,10 +62,10 @@ export default function ClientTable({
               <>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="animate-pulse">
-                    <td className="p-3"><div className="h-4 bg-neutral-900/40 rounded w-3/4" /></td>
-                    <td className="p-3 hidden sm:table-cell"><div className="h-4 bg-neutral-900/40 rounded w-1/2" /></td>
-                    <td className="p-3 hidden md:table-cell"><div className="h-4 bg-neutral-900/40 rounded w-1/3" /></td>
-                    <td className="p-3"><div className="h-4 bg-neutral-900/40 rounded w-1/4" /></td>
+                    <td className="p-4"><div className="h-4 bg-neutral-900/40 rounded w-3/4" /></td>
+                    <td className="p-4 hidden sm:table-cell"><div className="h-4 bg-neutral-900/40 rounded w-1/2" /></td>
+                    <td className="p-4 hidden md:table-cell"><div className="h-4 bg-neutral-900/40 rounded w-1/3" /></td>
+                    <td className="p-4"><div className="h-4 bg-neutral-900/40 rounded w-1/4" /></td>
                   </tr>
                 ))}
               </>
@@ -86,33 +86,33 @@ export default function ClientTable({
                 key={c.id}
                 className="border-t border-brand/5 hover:bg-neutral-900/40 transition"
               >
-                <td className="p-3">
-                  <div className="flex items-center gap-3">
-                    {/* avatar placeholder */}
-                    <div className="h-10 w-10 rounded-md bg-neutral-900 flex items-center justify-center text-sm text-brand-dark font-semibold">
+                <td className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* avatar placeholder - más grande */}
+                    <div className="h-12 w-12 rounded-md bg-neutral-900 flex items-center justify-center text-base text-brand-dark font-semibold">
                       {initials(c.nombre, c.apellido)}
                     </div>
                     <div>
-                      <div className="font-semibold text-sm text-brand">{highlight(fullName(c))}</div>
-                      <div className="text-xs text-neutral-400 mt-0.5">{c.correo || "—"}</div>
+                      <div className="font-semibold text-base text-brand">{highlight(fullName(c))}</div>
+                      <div className="text-sm text-neutral-400 mt-0.5">{c.correo || "—"}</div>
                     </div>
                   </div>
                 </td>
 
-                <td className="p-3 hidden sm:table-cell">
+                <td className="p-4 hidden sm:table-cell">
                   <div className="text-sm">{highlight(c.documento)}</div>
                 </td>
 
-                <td className="p-3 hidden md:table-cell">
+                <td className="p-4 hidden md:table-cell">
                   <div className="text-sm">{highlight(c.telefono)}</div>
                 </td>
 
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => onVer(c)}
                       title="Ver"
-                      className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-neutral-900/30 transition text-brand-dark"
+                      className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-neutral-900/30 transition text-brand-dark"
                     >
                       <Eye className="h-4 w-4" />
                       <span className="hidden sm:inline text-xs">Ver</span>
@@ -121,7 +121,7 @@ export default function ClientTable({
                     <button
                       onClick={() => onEditar(c)}
                       title="Editar"
-                      className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-neutral-900/30 transition text-blue-300"
+                      className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-neutral-900/30 transition text-blue-300"
                     >
                       <Edit2 className="h-4 w-4" />
                       <span className="hidden sm:inline text-xs">Editar</span>
@@ -130,7 +130,7 @@ export default function ClientTable({
                     <button
                       onClick={() => onEliminar(c.id)}
                       title="Eliminar"
-                      className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-red-700/20 transition text-red-500"
+                      className="flex items-center gap-1 px-3 py-2 rounded-md hover:bg-red-700/20 transition text-red-500"
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="hidden sm:inline text-xs">Eliminar</span>
@@ -142,7 +142,7 @@ export default function ClientTable({
                         target="_blank"
                         rel="noreferrer"
                         title="Abrir archivo"
-                        className="ml-2 flex items-center gap-1 px-2 py-1 rounded-md hover:bg-neutral-900/30 transition text-brand-dark"
+                        className="ml-2 flex items-center gap-1 px-3 py-2 rounded-md hover:bg-neutral-900/30 transition text-brand-dark"
                       >
                         <Download className="h-4 w-4" />
                         <span className="hidden sm:inline text-xs">Archivo</span>

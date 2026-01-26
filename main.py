@@ -1,11 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# importar routers desde app.routes
 from app.routes import stats
-from app.routes import auth, clients, reportes
+from app.routes import auth, clients, reportes, config
 from app.db_pg import Base, engine
-
 
 app = FastAPI(title="Gestor de Óptica", version="1.0")
 
@@ -27,7 +24,17 @@ app.include_router(auth.router)
 app.include_router(stats.router)
 app.include_router(clients.router)
 app.include_router(reportes.router)
+app.include_router(config.router)
 
 @app.get("/")
 def home():
+    # Ruta raíz: verifica que API y CORS funcionan.
+    """Ruta raíz de la API.
+
+    Retorna un mensaje simple para verificar que el servidor y CORS
+    están funcionando correctamente. No recibe parámetros.
+
+    Returns:
+        dict: Mensaje de estado.
+    """
     return {"msg": "Servidor y CORS funcionando correctamente"}

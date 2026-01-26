@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.sql import func
 from app.db_pg import Base  # Asegúrate de importar Base desde el archivo correcto
 
+# Modelo Cliente (definición de columnas para la tabla 'clientes').
 class Cliente(Base):									# --> Modelo de datos para la tabla "clientes"
 	__tablename__ = "clientes"							# --> Nombre real de la tabla en la base de datos
 
@@ -12,9 +13,9 @@ class Cliente(Base):									# --> Modelo de datos para la tabla "clientes"
 	telefono = Column(String(20))						# --> Teléfono de contacto
 	correo = Column(String(100))						# --> Correo electrónico (opcional)
 	direccion = Column(String(150))						# --> Dirección del cliente (opcional)
-	
-	archivo = column(String, nuttable=True)
-	
+
+	archivo = Column(String(255))							# --> Ruta del archivo asociado al cliente (opcional)
+
 	formula_od = Column(String(50))						# --> Fórmula óptica - Ojo derecho
 	formula_oi = Column(String(50))						# --> Fórmula óptica - Ojo izquierdo
 	
