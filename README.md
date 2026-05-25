@@ -26,3 +26,14 @@ Preparación para empaquetar el sistema localmente.
 Fase 4 – Mantenibilidad y migración futura
 Documentar la API y componentes.
 Dejar el código modularizado para futuras expansiones (app móvil, autenticación, etc.).
+
+## Estructura del proyecto
+
+El proyecto está organizado de forma modular para separar responsabilidades y facilitar el mantenimiento del código:
+
+app/
+ ├── main.py         # Punto de entrada de la aplicación
+ ├── routes/         # Definición de endpoints (rutas de la API)
+ ├── models/         # Modelos de la base de datos
+ ├── schemas/        # Esquemas de validación con Pydantic
+ ├── database/       # Configuración de la conexión a la base de datos
