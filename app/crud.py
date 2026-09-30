@@ -1,6 +1,7 @@
+from app.schemas import schemas
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from app import models, schemas
+from app.models import models
 from typing import Optional
 
 # --> Este archivo contiene todas las funciones que realizan las operaciones en la base de datos.

@@ -1,21 +1,54 @@
+from app.models import models
+from app.schemas import schemas
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from datetime import date
-from app import schemas, crud, models
-from app.db_pg import get_db, SessionLocal, engine
+from app import crud
+from app.database.db_pg import get_db, SessionLocal, engine
+from app.routes.config import supabase
+from fastapi import BackgroundTasks
 import os
 from typing import Optional
+import os
+from app.routes.config import supabase, BUCKET_NAME
+from dotenv import load_dotenv
+
+load_dotenv()
 
 router = APIRouter(
     prefix="/clientes",
     tags=["Clientes"]
 )
 
-UPLOAD_DIR = "uploads"
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+UPLOAD_DIR = os.path.join(DATA_DIR, "./uploads")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+def subir_archivo_a_supabase(local_path: str, filename: str):
+    """
+    Sube una copia del archivo a Supabase Storage como respaldo.
+    Falla en silencio si no hay internet o Supabase no está configurado --
+    el archivo local ya está guardado, esto es solo un backup adicional.
+    """
+    if not supabase:
+        print(f"⚠️ Supabase no configurado, se omite respaldo de: {filename}")
+        return
+
+    try:
+        with open(local_path, "rb") as f:
+            contenido = f.read()
+
+        supabase.storage.from_(BUCKET_NAME).upload(
+            path=filename,
+            file=contenido,
+            file_options={"upsert": "true"}  # sobrescribe si ya existe uno con el mismo nombre
+        )
+        print(f"☁️ Archivo respaldado en Supabase: {filename}")
+    except Exception as e:
+        print(f"📡 Respaldo a Supabase omitido para '{filename}' (sin internet o error): {e}")
 # Mueve endpoints específicos arriba
 @router.get("/cumpleanos-proximos", response_model=list[schemas.CumpleanosProximo])
 def proximos_cumpleanos(db: Session = Depends(get_db)):
@@ -63,9 +96,10 @@ def descargar_archivo(filename: str):
 # Ahora los endpoints con parámetros dinámicos
 @router.post("/", response_model=schemas.ClienteOut)
 async def create_cliente(
+    background_tasks: BackgroundTasks,
     nombre: str = Form(...),
     apellido: str = Form(...),
-    documento: str = Form(...),
+    documento: Optional[str] = Form(None),
     telefono: Optional[str] = Form(None),
     correo: Optional[str] = Form(None),
     direccion: Optional[str] = Form(None),
@@ -108,6 +142,7 @@ async def create_cliente(
         path = os.path.join(UPLOAD_DIR, filename)
         with open(path, "wb") as f:
             f.write(await archivo.read())
+        background_tasks.add_task(subir_archivo_a_supabase, path, filename)
 
     data = schemas.ClienteCreate(
         nombre=nombre,
@@ -162,10 +197,11 @@ def buscar_clientes(
 
 @router.put("/{cliente_id}", response_model=schemas.ClienteOut)
 async def actualizar_cliente(
+    background_tasks: BackgroundTasks,
     cliente_id: int,
     nombre: str = Form(...),
     apellido: str = Form(...),
-    documento: str = Form(...),
+    documento: Optional[str] = Form(None),
     telefono: Optional[str] = Form(None),
     correo: Optional[str] = Form(None),
     direccion: Optional[str] = Form(None),
@@ -201,7 +237,7 @@ async def actualizar_cliente(
         path = os.path.join(UPLOAD_DIR, filename)
         with open(path, "wb") as f:
             f.write(await archivo.read())
-
+        background_tasks.add_task(subir_archivo_a_supabase, path, filename)
     datos = schemas.ClienteCreate(
         nombre=nombre,
         apellido=apellido,
@@ -224,6 +260,12 @@ async def actualizar_cliente(
         oi_dp=oi_dp,
         oi_alt=oi_alt,
         oi_prisma=oi_prisma,
+        tipo_lente=tipo_lente,
+        tratamiento_lente=tratamiento_lente,
+        laboratorio=laboratorio,
+        precio=precio,
+        tiene_factura=tiene_factura,
+        numero_factura=numero_factura,
         fecha_cumpleanos=fecha_cumpleanos
     )
 

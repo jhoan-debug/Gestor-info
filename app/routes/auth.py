@@ -1,29 +1,16 @@
 from fastapi import APIRouter, HTTPException, Depends, Form
-from jose import jwt, JWTError
-from datetime import datetime, timedelta
-from app.db_pg import SessionLocal
 from sqlalchemy.orm import Session
-
-SECRET_KEY = "clave-super-segura"
-ALGORITHM = "HS256"
+from app.database.db_pg import get_db
+from app.models.models import Usuario
 
 router = APIRouter(prefix="/login", tags=["Autenticación"])
 
-def get_db():
-    # Dependencia que proporciona una sesión de base de datos para los endpoints.
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.post("/")
 def login(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # Endpoint de login: valida credenciales y emite un JWT si son válidas.
-    # credenciales fijas
-    if username != "admin" or password != "1234":
+    # Busca el usuario en la base de datos
+    usuario_db = db.query(Usuario).filter(Usuario.usuario == username).first()
+
+    if not usuario_db or usuario_db.contrasena != password:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    expiration = datetime.utcnow() + timedelta(hours=8)
-    token = jwt.encode({"sub": username, "exp": expiration}, SECRET_KEY, algorithm=ALGORITHM)
-    return {"access_token": token, "token_type": "bearer"}
+    return {"ok": True, "usuario": usuario_db.usuario}

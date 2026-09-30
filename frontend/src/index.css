@@ -52,3 +52,74 @@ html {
   @apply bg-neutral-900 border border-brand/10 rounded-lg p-3 text-brand
          focus:border-brand focus:outline-none transition-all duration-200;
 }
+
+/* Fondo con textura para modales */
+.modal-surface {
+  position: relative;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(255,215,0,0.07), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(255,215,0,0.05), transparent 50%),
+    var(--panel);
+}
+
+.modal-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgba(255,215,0,0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: linear-gradient(to bottom, black, rgba(0,0,0,0.35) 70%, transparent);
+  mask-image: linear-gradient(to bottom, black, rgba(0,0,0,0.35) 70%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Toggle switch estilo on/off */
+.toggle-brand {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1.5px solid rgba(255, 215, 0, 0.25);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Bolita del switch */
+.toggle-brand::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--brand-dark);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+/* Estado activado (checked) */
+.toggle-brand:checked {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: var(--brand);
+}
+
+.toggle-brand:checked::after {
+  transform: translateX(18px);
+  background: var(--brand);
+}
+
+.toggle-brand:hover {
+  border-color: var(--brand);
+}
+
+.toggle-brand:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
+}

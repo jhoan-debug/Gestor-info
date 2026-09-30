@@ -1,26 +1,42 @@
 import React, { useState } from "react";
 import PageTransition from "./PageTransition.jsx";
-import { FaUser, FaLock } from "react-icons/fa"; // Íconos para usuario y contraseña (opcional)
+import { FaUser, FaLock } from "react-icons/fa";
+import api from "../api";
+
 
 // Componente Login: formulario de acceso (credenciales demo).
 export default function Login({ onLogin }) {
   const [usuario, setUsuario] = useState("");
   const [clave, setClave] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (usuario === "admin" && clave === "1234") {
-      onLogin();
-    } else {
+    setError("");
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("username", usuario);
+      formData.append("password", clave);
+
+      const res = await api.post("/login/", formData);
+
+      if (res.data.ok) {
+        localStorage.setItem("mundo_optico_sesion", JSON.stringify({ usuario: res.data.usuario }));
+        onLogin();
+      }
+    } catch (err) {
       setError("Credenciales inválidas");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <PageTransition>
       <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
-        {/* Fondo animado sutil (opcional) */}
         <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black opacity-90"></div>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,215,0,0.1)_0%,_transparent_70%)]"></div>
 
@@ -32,7 +48,6 @@ export default function Login({ onLogin }) {
             Acceso al Gestor
           </h2>
 
-          {/* Campo Usuario */}
           <div className="relative mb-4">
             <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-400" />
             <input
@@ -44,7 +59,6 @@ export default function Login({ onLogin }) {
             />
           </div>
 
-          {/* Campo Contraseña */}
           <div className="relative mb-4">
             <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-400" />
             <input
@@ -64,9 +78,10 @@ export default function Login({ onLogin }) {
 
           <button
             type="submit"
-            className="w-full py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-all duration-300 shadow-lg hover:shadow-yellow-500/50 transform hover:scale-105"
+            disabled={loading}
+            className="w-full py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-all duration-300 shadow-lg hover:shadow-yellow-500/50 transform hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
           >
-            Entrar
+            {loading ? "Verificando..." : "Entrar"}
           </button>
 
           <div className="mt-4 text-xs text-yellow-600 text-center">

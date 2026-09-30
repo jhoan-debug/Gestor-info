@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import api from "../api";
 
-// componentes
 import ClientForm from "./clientes/ClientForm";
 import SearchModal from "./clientes/SearchModal";
 import ViewModal from "./clientes/ViewModal";
@@ -60,20 +59,38 @@ export const sharedLists = {
   ALT: Array.from({ length: 21 }, (_, i) => String(10 + i)),
 };
 
-// Vista Clientes: gestiona formulario, búsqueda y modales de clientes.
 export default function Clientes() {
-
-  const [msg, setMsg] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const [verCliente, setVerCliente] = useState(null);
   const [editarCliente, setEditarCliente] = useState(null);
   const [buscarModal, setBuscarModal] = useState(false);
-  const flash = (text) => {
-    setMsg(text);
-    setTimeout(() => setMsg(""), 3000);
+  const [searchRefresh, setSearchRefresh] = useState(null);
+
+  const showNotification = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 4000);
   };
 
   return (
-    <div className="p-6 text-brand animate-fade-in-up">
+    <div className="p-6 text-brand animate-fade-in-up relative">
+
+      {/* NOTIFICACIÓN FLOTANTE (TOAST) */}
+      {toast.show && (
+        <div
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl transition-all duration-300 border ${
+            toast.type === "error"
+              ? "bg-red-950/90 border-red-500/50 text-red-200"
+              : "bg-emerald-950/90 border-emerald-500/50 text-emerald-200"
+          }`}
+        >
+          <span className="text-lg">
+            {toast.type === "error" ? "⚠️" : "✨"}
+          </span>
+          <p className="text-xs font-medium pr-2">{toast.message}</p>
+        </div>
+      )}
 
       {/* ENCABEZADO */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -81,34 +98,22 @@ export default function Clientes() {
 
         <button
           onClick={() => setBuscarModal(true)}
-          className="px-4 py-2 rounded-lg bg-brand text-black font-semibold shadow-glow-amber hover:bg-brand-dark transition"
+          className="px-4 py-2 rounded-lg bg-amber-500 text-slate-950 font-semibold shadow-glow-amber hover:bg-amber-400 transition text-xs"
         >
           Buscar cliente
         </button>
       </div>
 
-      {/* ALERTA */}
-      {msg && (
-        <div className="bg-brand text-black px-4 py-2 rounded-md mb-5 animate-fade-in-up shadow-md">
-          {msg}
-        </div>
-      )}
-
       {/* FORMULARIO */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-3">
-          <div className="bg-panel border border-brand/10 rounded-xl p-8 shadow-glow-amber animate-fade-in-up transition-all duration-300 w-full">
+          <div className="bg-panel border border-brand/10 rounded-xl p-6 shadow-glow-amber transition-all duration-300 w-full">
             <ClientForm
-              onCreated={() => {
-                flash("Cliente registrado exitosamente!");
-              }}
-              api={api}
+              onCreated={(msg, type) => showNotification(msg, type)}
               sharedLists={sharedLists}
             />
           </div>
         </div>
-
-        {/* Removí la sección "TABLA RESULTADOS" porque ahora está en el modal */}
       </div>
 
       {/* MODALES */}
@@ -121,14 +126,21 @@ export default function Clientes() {
             if (!confirm("¿Eliminar cliente?")) return;
             try {
               await api.delete(`/clientes/${id}`);
-              flash("Cliente eliminado");
+              showNotification("Cliente eliminado con éxito", "success");
+
+              // Si el cliente eliminado estaba abierto en "ver", lo cerramos
+              if (verCliente?.id === id) setVerCliente(null);
+
+              // Avisamos al SearchModal para que lo quite de su lista
+              setSearchRefresh({ type: "delete", id, ts: Date.now() });
             } catch {
-              flash("Error al eliminar cliente");
+              showNotification("Error al eliminar el cliente", "error");
             }
           }}
           api={api}
           archivoUrl={(fn) => fn ? `${api.defaults.baseURL}/clientes/archivo/${fn}` : null}
           sharedLists={sharedLists}
+          refreshSignal={searchRefresh} // 👈 le pasamos la señal
         />
       )}
 
@@ -137,6 +149,7 @@ export default function Clientes() {
           cliente={verCliente}
           onClose={() => setVerCliente(null)}
           archivoUrl={(fn) => fn ? `${api.defaults.baseURL}/clientes/archivo/${fn}` : null}
+          onEdit={() => setEditarCliente(verCliente)}
         />
       )}
 
@@ -144,8 +157,31 @@ export default function Clientes() {
         <EditModal
           cliente={editarCliente}
           onClose={() => setEditarCliente(null)}
-          onSaved={() => {
-            flash("✨ Cliente actualizado");
+          onSaved={async (clienteActualizado) => {
+            showNotification("Cliente actualizado exitosamente", "success");
+
+            let clienteFinal = clienteActualizado;
+
+            // Fallback si EditModal no devuelve el objeto actualizado
+            if (!clienteFinal) {
+              try {
+                const res = await api.get(`/clientes/${editarCliente.id}`);
+                clienteFinal = res.data;
+              } catch {
+                clienteFinal = null;
+              }
+            }
+
+            // Actualiza el ViewModal si está mostrando este cliente
+            if (clienteFinal && verCliente?.id === editarCliente.id) {
+              setVerCliente(clienteFinal);
+            }
+
+            // Avisa al SearchModal para que actualice esa fila
+            if (clienteFinal) {
+              setSearchRefresh({ type: "update", cliente: clienteFinal, ts: Date.now() });
+            }
+
             setEditarCliente(null);
           }}
           api={api}

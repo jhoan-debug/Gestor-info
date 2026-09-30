@@ -1,97 +1,45 @@
 from fastapi import APIRouter, HTTPException
-import httpx
 from dotenv import load_dotenv
 import os
+import traceback
 from typing import List, Dict, Any
-from pydantic import BaseModel
 from supabase import create_client, Client
-from sqlalchemy import create_engine, Column, Integer, String, Date, Text
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-import locale
-import locale  # Agrega esto
-from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from sqlalchemy import text
 
-router = APIRouter(prefix="/config", tags=["config"])
+from app.database.db_pg import Base, engine, SessionLocal
+from app.models.models import Cliente as ClienteDB
+
 load_dotenv()
+router = APIRouter(prefix="/config", tags=["config"])
+
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # O usa SUPABASE_KEY si es la clave de servicio
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-DATABASE_URL = "postgresql+psycopg://postgres:2006@localhost:5433/optica"
-
-class Base(DeclarativeBase):
-    pass
-
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-)
-
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
-
-
-class ClienteDB(Base):
-    __tablename__ = 'clientes'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    nombre = Column(String)
-    apellido = Column(String)
-    documento = Column(String)
-    telefono = Column(String)
-    correo = Column(String)
-    direccion = Column(String)
-    formula_od = Column(String)
-    formula_oi = Column(String)
-    observaciones = Column(Text)
-    od_esfera = Column(String)
-    od_cilindro = Column(String)
-    od_eje = Column(String)
-    od_add = Column(String)
-    od_dp = Column(String)
-    od_alt = Column(String)
-    od_prisma = Column(String)
-    oi_esfera = Column(String)
-    oi_cilindro = Column(String)
-    oi_eje = Column(String)
-    oi_add = Column(String)
-    oi_dp = Column(String)
-    oi_alt = Column(String)
-    oi_prisma = Column(String)
-    tipo_lente = Column(String)
-    tratamiento_lente = Column(String)
-    laboratorio = Column(String)
-    precio = Column(Integer)
-    tiene_factura = Column(String)
-    numero_factura = Column(String)
-    archivo = Column(String)
-    fecha_cumpleanos = Column(Date, nullable=True)
+BUCKET_NAME = "clientes-archivos"
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("ADVERTENCIA: SUPABASE_URL o SUPABASE_KEY no están configuradas en el .env")
+    supabase = None
+else:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ##engine = create_engine(DATABASE_URL)
 ##SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 ##Base.metadata.create_all(bind=engine)
 
-print("DSN generada por SQLAlchemy:", engine.url)  # Esto mostrará la URL completa
-print("DB_HOST:", repr(os.environ.get('DB_HOST')))
-print("DB_PASS:", repr(os.environ.get('DB_PASS')))
-print("DB_USER:", repr(os.environ.get('DB_USER')))
+##print("DSN generada por SQLAlchemy:", engine.url)  # Esto mostrará la URL completa
+##print("DB_HOST:", repr(os.environ.get('DB_HOST')))
+##print("DB_PASS:", repr(os.environ.get('DB_PASS')))
+##print("DB_USER:", repr(os.environ.get('DB_USER')))
 
 class Cliente(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # Recomendado para SQLAlchemy (antes orm_mode)
 
     nombre: str
     apellido: str
-    documento: str
+    documento: Optional[str] = None
     telefono: Optional[str] = None
     correo: Optional[str] = None
     direccion: Optional[str] = None
@@ -123,6 +71,9 @@ class Cliente(BaseModel):
 
 @router.post("/sync-to-supabase")
 async def sync_to_supabase(clientes: List[Dict[str, Any]]):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Credenciales de Supabase no configuradas")
+    
     try:
         if not isinstance(clientes, list):
             raise HTTPException(status_code=400, detail="Los datos deben ser una lista de clientes")
@@ -131,6 +82,12 @@ async def sync_to_supabase(clientes: List[Dict[str, Any]]):
 
         datos_mapeados = []
         for c in clientes:
+            fecha_cumple = c.get('fecha_cumpleanos')
+            if fecha_cumple and isinstance(fecha_cumple, str):
+                fecha_cumple = fecha_cumple.split('T')[0]
+            else:
+                fecha_cumple = None
+
             datos_mapeados.append({
                 'nombre': c.get('nombre'),
                 'apellido': c.get('apellido'),
@@ -162,7 +119,7 @@ async def sync_to_supabase(clientes: List[Dict[str, Any]]):
                 'tiene_factura': c.get('tiene_factura'),
                 'numero_factura': c.get('numero_factura'),
                 'archivo': c.get('archivo'),
-                'fecha_cumpleanos': c.get('fecha_cumpleanos').split('T')[0] if c.get('fecha_cumpleanos') else None,
+                'fecha_cumpleanos': fecha_cumple,
             })
 
         supabase.table('clientes').insert(datos_mapeados).execute()
@@ -171,9 +128,8 @@ async def sync_to_supabase(clientes: List[Dict[str, Any]]):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
-
-
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error en sync_to_supabase: {str(e)}")
 
 @router.post("/sync-to-local-db")
 async def sync_to_local_db():
@@ -293,17 +249,17 @@ async def sync_to_local_db():
 
 @router.get("/import-from-supabase")
 async def import_from_supabase(offset: int = 0, limit: int = 1000):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Credenciales de Supabase no configuradas")
+        
     try:
-        print(f"Iniciando consulta a Supabase: offset={offset}, limit={limit}")
         response = supabase.table('clientes').select('*').range(offset, offset + limit - 1).execute()
-        print(f"Respuesta de Supabase: {response}")
         data = response.data
+        
         if data is None:
-            print("Advertencia: response.data es None")
-            raise HTTPException(status_code=500, detail="Respuesta inválida de Supabase")
+            raise HTTPException(status_code=500, detail="Respuesta inválida de Supabase (data es None)")
         
         has_more = len(data) == limit
-        print(f"Datos obtenidos: {len(data)} registros, has_more={has_more}")
         return {
             "clientes": data,
             "has_more": has_more,
@@ -311,5 +267,5 @@ async def import_from_supabase(offset: int = 0, limit: int = 1000):
         }
     
     except Exception as e:
-        print(f"Error en import_from_supabase: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error interno en import_from_supabase: {str(e)}")

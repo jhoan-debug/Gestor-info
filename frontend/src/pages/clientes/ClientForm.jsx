@@ -1,15 +1,23 @@
 import React, { useState } from "react";
+import api from "../../api"; // Importación directa para evitar que api llegue undefined
 
-export default function ClientForm({ onCreated, api }) {
-  const initialState = {
+export default function ClientForm({ onCreated, sharedLists = {} }) {
+  const esferas = sharedLists?.ESFERAS || [];
+  const cilindros = sharedLists?.CILINDROS || [];
+  const ejes = sharedLists?.EJES || [];
+  const addList = sharedLists?.ADD_LIST || [];
+  const prismas = sharedLists?.PRISMAS || [];
+  const dp = sharedLists?.DP || [];
+  const alt = sharedLists?.ALT || [];
+
+  const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     documento: "",
     telefono: "",
     correo: "",
     direccion: "",
-    fecha_cumpleanos: "",
-
+    observaciones: "",
     od_esfera: "",
     od_cilindro: "",
     od_eje: "",
@@ -17,7 +25,6 @@ export default function ClientForm({ onCreated, api }) {
     od_dp: "",
     od_alt: "",
     od_prisma: "",
-
     oi_esfera: "",
     oi_cilindro: "",
     oi_eje: "",
@@ -25,317 +32,355 @@ export default function ClientForm({ onCreated, api }) {
     oi_dp: "",
     oi_alt: "",
     oi_prisma: "",
-
     tipo_lente: "",
     tratamiento_lente: "",
     laboratorio: "",
+    registrar_precio: false,
     precio: "",
     tiene_factura: false,
     numero_factura: "",
+    fecha_cumpleanos: "",
+  });
 
-    observaciones: "",
-    archivo: null,
-  };
-
-function normalizeDate(fechaStr) {
-  if (!fechaStr) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-    return fechaStr;
-  }
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaStr)) {
-    const [dia, mes, año] = fechaStr.split("/");
-    return `${año}-${mes}-${dia}`;
-  }
-
-  return null;
-}
-
-
-  const [form, setForm] = useState(initialState);
+  const [archivo, setArchivo] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const lists = {
-    ESFERAS: [
-    "-20.00","-19.75","-19.50","-19.25","-19.00","-18.75","-18.50","-18.25",
-    "-18.00","-17.75","-17.50","-17.25","-17.00","-16.75","-16.50","-16.25",
-    "-16.00","-15.75","-15.50","-15.25","-15.00","-14.75","-14.50","-14.25",
-    "-14.00","-13.75","-13.50","-13.25","-13.00","-12.75","-12.50","-12.25",
-    "-12.00","-11.75","-11.50","-11.25","-11.00","-10.75","-10.50","-10.25",
-    "-10.00","-9.75","-9.50","-9.25","-9.00","-8.75","-8.50","-8.25",
-    "-8.00","-7.75","-7.50","-7.25","-7.00","-6.75","-6.50","-6.25",
-    "-6.00","-5.75","-5.50","-5.25","-5.00","-4.75","-4.50","-4.25",
-    "-4.00","-3.75","-3.50","-3.25","-3.00","-2.75","-2.50","-2.25",
-    "-2.00","-1.75","-1.50","-1.25","-1.00","-0.75","-0.50","-0.25",
-    "0.00",
-    "+0.25","+0.50","+0.75","+1.00","+1.25","+1.50","+1.75","+2.00",
-    "+2.25","+2.50","+2.75","+3.00","+3.25","+3.50","+3.75","+4.00",
-    "+4.25","+4.50","+4.75","+5.00","+5.25","+5.50","+5.75","+6.00",
-    "+6.25","+6.50","+6.75","+7.00","+7.25","+7.50","+7.75","+8.00",
-    "+8.25","+8.50","+8.75","+9.00","+9.25","+9.50","+9.75","+10.00",
-    "+10.25","+10.50","+10.75","+11.00","+11.25","+11.50","+11.75","+12.00",
-    "+12.25","+12.50","+12.75","+13.00","+13.25","+13.50","+13.75","+14.00",
-    "+14.25","+14.50","+14.75","+15.00","+15.25","+15.50","+15.75","+16.00",
-    "+16.25","+16.50","+16.75","+17.00","+17.25","+17.50","+17.75","+18.00",
-    "+18.25","+18.50","+18.75","+19.00","+19.25","+19.50","+19.75","+20.00"
-  ],
-
-  CILINDROS: [
-    "6.00","5.75","5.50","5.25","5.00","4.75","4.50","4.25", "4.00",
-    "3.75","3.50","3.25","3.00","2.75","2.50","2.25","2.00",
-    "1.75","1.50","1.25","1.00","0.75","0.50","0.25",
-    "0.00",
-    "-0.25","-0.50","-0.75","-1.00","-1.25","-1.50","-1.75",
-    "-2.00","-2.25","-2.50","-2.75","-3.00","-3.25","-3.50","-3.75",
-    "-4.00","-4.25","-4.50","-4.75","-5.00","-5.25","-5.50","-5.75","-6.00"
-  ],
-
-  EJES: Array.from({ length: 180 }, (_, i) => String(i + 1)),
-
-  ADD_LIST: [
-    "+0.75","+1.00","+1.25","+1.50","+1.75","+2.00",
-    "+2.25","+2.50","+2.75","+3.00","+3.25","+3.50"
-  ],
-
-  PRISMAS: [
-    "0.25","0.50","0.75","1.00","1.25","1.50","1.75","2.00","2.25","2.50",
-    "2.75","3.00","3.25","3.50","3.75","4.00","4.25","4.50","4.75","5.00",
-    "5.25","5.50","5.75","6.00","6.25","6.50","6.75","7.00","7.25","7.50",
-    "7.75","8.00","8.25","8.50","8.75","9.00","9.25","9.50","9.75","10.00"
-  ],
-
-  DP: Array.from({ length: 13 }, (_, i) => String(26 + i)),
-  ALT: Array.from({ length: 21 }, (_, i) => String(10 + i)),
-};
-
   const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    setForm((f) => ({ ...f, [name]: files ? files[0] : value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
-  const payload = {
-  ...form,
-  precio: form.precio ? Number(form.precio) : null,
-  numero_factura: form.tiene_factura ? form.numero_factura : null
-};
-
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const data = new FormData();
+    const body = new FormData();
+    Object.keys(formData).forEach((key) => {
+      if (key === "precio" && !formData.registrar_precio) return;
+      if (key === "numero_factura" && !formData.tiene_factura) return;
+      if (key === "registrar_precio") return;
 
-    Object.entries(form).forEach(([k, v]) => {
-      // NO envia si esta vacio
-      if (v === null || v === undefined || v === "") return;
-
-      // archivo si es file
-      if (k === "archivo") {
-        if (v instanceof File) {
-          data.append(k, v);
-        }
+      if (key === "tiene_factura") {
+        body.append("tiene_factura", formData.tiene_factura ? "true" : "false");
         return;
       }
 
-      data.append(k, v);
+      if (formData[key] !== null && formData[key] !== "") {
+        body.append(key, formData[key]);
+      }
     });
 
-    // Debugging
-    console.log("¿Es FormData?", data instanceof FormData);
-    for (let pair of data.entries()) {
-      console.log(pair[0], pair[1], typeof pair[1]);
+    if (archivo) {
+      body.append("archivo", archivo);
     }
 
-    await api.post("/clientes/", data);
+    try {
+      await api.post("/clientes/", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-    setForm(initialState);
-    onCreated();
-  } catch (error) {
-    console.log("STATUS:", error.response?.status);
-    console.log("DETAIL:", error.response?.data?.detail);
-    console.error(error);
-    alert("Error al guardar cliente");
-  } finally {
-    setLoading(false);
-  }
-};
+      onCreated("¡Cliente registrado exitosamente!", "success");
 
-  const renderSelect = (label, name, list) => (
-    <div className="animate-slide-left animation-delay-200">
-      <label className="text-sm text-brand-dark">{label}</label>
-      <select
-        name={name}
-        value={form[name]}
-        onChange={handleChange}
-        className="select-modern w-full bg-neutral-900 border border-brand/10 rounded-lg px-3 py-2 mt-1" // Agregué clases para fondo oscuro y consistencia
-      >
-        <option value="">--</option>
-        {list.map((i) => (
-          <option key={i} value={i}>{i}</option>
-        ))}
-      </select>
-    </div>
-  );
-  
+      setFormData({
+        nombre: "", apellido: "", documento: "", telefono: "", correo: "", direccion: "", observaciones: "",
+        od_esfera: "", od_cilindro: "", od_eje: "", od_add: "", od_dp: "", od_alt: "", od_prisma: "",
+        oi_esfera: "", oi_cilindro: "", oi_eje: "", oi_add: "", oi_dp: "", oi_alt: "", oi_prisma: "",
+        tipo_lente: "", tratamiento_lente: "", laboratorio: "",
+        registrar_precio: false, precio: "", tiene_factura: false, numero_factura: "", fecha_cumpleanos: ""
+      });
+      setArchivo(null);
+    } catch (err) {
+      console.error(err);
+      const errorDetail = err.response?.data?.detail;
+      const msgError = Array.isArray(errorDetail)
+        ? errorDetail.map((e) => e.msg).join(", ")
+        : (errorDetail || "Error al registrar cliente. Verifique los datos.");
+
+      onCreated(msgError, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputStyle = "w-full bg-slate-900/60 border border-slate-700/60 rounded px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500 transition-colors";
+  const labelStyle = "block text-[11px] font-medium text-slate-400 mb-0.5";
 
   return (
-    <div className="bg-panel p-6 rounded-lg shadow-glow-amber animate-fade-in-up backdrop-blur-sm"> {/* Agregué bg-panel para fondo uniforme */}
-      <form onSubmit={handleSubmit} className="space-y-5">
-
-        {/* TITULO */}
-        <h2 className="text-xl font-bold mb-2 text-brand animate-pulse-amber animation-delay-100">Registrar Cliente</h2>
-
-        {/* DATOS PRINCIPALES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-left animation-delay-300">
-          <input name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} className="input-modern" />
-          <input name="apellido" placeholder="Apellido" value={form.apellido} onChange={handleChange} className="input-modern" />
-          <input name="documento" placeholder="Documento" value={form.documento} onChange={handleChange} className="input-modern" />
-          <input name="telefono" placeholder="Teléfono" value={form.telefono} onChange={handleChange} className="input-modern" />
-          <input name="correo" placeholder="Correo" value={form.correo} onChange={handleChange} className="input-modern" />
-          <input name="direccion" placeholder="Dirección" value={form.direccion} onChange={handleChange} className="input-modern" />
-
-          <div>
-            <label className="text-sm">Fecha de cumpleaños</label>
-            <input
-              type="date"
-              name="fecha_cumpleanos"
-              value={form.fecha_cumpleanos}
-              onChange={handleChange}
-              className="input-modern"
-            />
-          </div>
-        </div>
-
-        {/* FORMULA OD */}
-        <div className="mt-4 p-4 rounded-lg border border-brand/10 bg-neutral-900/40 animate-zoom-soft animation-delay-500">
-          <h3 className="font-semibold text-brand mb-2">Fórmula OD</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {renderSelect("Esfera", "od_esfera", lists.ESFERAS)}
-            {renderSelect("Cilindro", "od_cilindro", lists.CILINDROS)}
-            {renderSelect("Eje", "od_eje", lists.EJES)}
-            {renderSelect("ADD", "od_add", lists.ADD_LIST)}
-            {renderSelect("DP", "od_dp", lists.DP)}
-            {renderSelect("ALT", "od_alt", lists.ALT)}
-            {renderSelect("Prisma", "od_prisma", lists.PRISMAS)}
-          </div>
-        </div>
-
-        {/* FORMULA OI */}
-        <div className="mt-4 p-4 rounded-lg border border-brand/10 bg-neutral-900/40 animate-zoom-soft animation-delay-700">
-          <h3 className="font-semibold text-brand mb-2">Fórmula OI</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {renderSelect("Esfera", "oi_esfera", lists.ESFERAS)}
-            {renderSelect("Cilindro", "oi_cilindro", lists.CILINDROS)}
-            {renderSelect("Eje", "oi_eje", lists.EJES)}
-            {renderSelect("ADD", "oi_add", lists.ADD_LIST)}
-            {renderSelect("DP", "oi_dp", lists.DP)}
-            {renderSelect("ALT", "oi_alt", lists.ALT)}
-            {renderSelect("Prisma", "oi_prisma", lists.PRISMAS)}
-          </div>
-        </div>
-
-        {/* OBSERVACIONES */}
-        <textarea
-          name="observaciones"
-          placeholder="Observaciones"
-          value={form.observaciones}
-          onChange={handleChange}
-          className="input-modern h-20 animate-slide-left animation-delay-900"
-        />
-
-        {/* DATOS DEL LENTE */}
-<div className="card p-6 mt-6 fade-up">
-  <h3 className="text-lg font-semibold text-brand mb-4">
-    Datos del lente
-  </h3>
-
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <select
-      className="input-modern"
-      value={form.tipo_lente || ""}
-      onChange={e => setForm({ ...form, tipo_lente: e.target.value })}
-    >
-      <option value="">Tipo de lente</option>
-      <option>Monofocal</option>
-      <option>Bifocal</option>
-      <option>Progresivo</option>
-      <option>Ocupacional</option>
-      <option>Contacto</option>
-    </select>
-
-    <select
-      className="input-modern"
-      value={form.laboratorio || ""}
-      onChange={e => setForm({ ...form, laboratorio: e.target.value })}
-    >
-      <option value="">Laboratorio</option>
-      <option>Essilor</option>
-      <option>Hoya</option>
-      <option>Zeiss</option>
-      <option>Genérico</option>
-      <option>Otro</option>
-    </select>
-  </div>
-
-  <input
-    className="input-modern mt-4"
-    placeholder="Tratamiento del lente (antirreflejo, blue light, etc.)"
-    value={form.tratamiento_lente || ""}
-    onChange={e => setForm({ ...form, tratamiento_lente: e.target.value })}
-  />
-
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-    <input
-      type="number"
-      className="input-modern"
-      placeholder="Precio"
-      value={form.precio || ""}
-      onChange={e => setForm({ ...form, precio: e.target.value })}
-    />
-
-    <label className="flex items-center gap-2 text-sm text-brand">
-      <input
-        type="checkbox"
-        checked={form.tiene_factura || false}
-        onChange={e =>
-          setForm({
-            ...form,
-            tiene_factura: e.target.checked,
-            numero_factura: e.target.checked ? form.numero_factura : ""
-          })
-        }
-      />
-      Tiene factura
-    </label>
-  </div>
-
-  {form.tiene_factura && (
-    <input
-      className="input-modern mt-4 animate-fade-in-up"
-      placeholder="Número de factura"
-      value={form.numero_factura || ""}
-      onChange={e => setForm({ ...form, numero_factura: e.target.value })}
-    />
-  )}
-</div>
+    <form onSubmit={handleSubmit} className="space-y-4 text-xs">
       
+      {/* DATOS PERSONALES */}
+      <div>
+        <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-2">
+          Datos Personales
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div>
+            <label className={labelStyle}>Nombre *</label>
+            <input required type="text" name="nombre" value={formData.nombre} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Apellido *</label>
+            <input required type="text" name="apellido" value={formData.apellido} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Documento</label>
+            <input type="text" name="documento" value={formData.documento} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Teléfono</label>
+            <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Correo</label>
+            <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Dirección</label>
+            <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Cumpleaños</label>
+            <input type="date" name="fecha_cumpleanos" value={formData.fecha_cumpleanos} onChange={handleChange} className={inputStyle} />
+          </div>
+          <div>
+            <label className={labelStyle}>Historia / Archivo</label>
+            <input type="file" onChange={(e) => setArchivo(e.target.files[0])} className={`${inputStyle} file:mr-2 file:py-0 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-amber-500 file:text-black hover:file:bg-amber-400`} />
+          </div>
+        </div>
+      </div>
 
-        {/* ARCHIVO */}
-        <div className="animate-fade-in-up animation-delay-1000">
-          <label className="text-sm">Archivo (opcional)</label>
-          <input type="file" name="archivo" onChange={handleChange} className="input-modern" />
+      {/* FÓRMULA ÓPTICA */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-wider">
+          Fórmula Óptica
+        </h3>
+        
+        {/* OD */}
+        <div className="bg-slate-900/40 p-2 rounded border border-slate-800">
+          <span className="text-[10px] font-bold text-amber-400 block mb-1">OJO DERECHO (OD)</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            <div>
+              <label className={labelStyle}>Esfera</label>
+              <select name="od_esfera" value={formData.od_esfera} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {esferas.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Cilindro</label>
+              <select name="od_cilindro" value={formData.od_cilindro} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {cilindros.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Eje</label>
+              <select name="od_eje" value={formData.od_eje} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {ejes.map((val) => <option key={val} value={val}>{val}°</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>ADD</label>
+              <select name="od_add" value={formData.od_add} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {addList.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>DP</label>
+              <select name="od_dp" value={formData.od_dp} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {dp.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>ALT</label>
+              <select name="od_alt" value={formData.od_alt} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {alt.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Prisma</label>
+              <select name="od_prisma" value={formData.od_prisma} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {prismas.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
 
-        {/* BOTÓN */}
+        {/* OI */}
+        <div className="bg-slate-900/40 p-2 rounded border border-slate-800">
+          <span className="text-[10px] font-bold text-amber-400 block mb-1">OJO IZQUIERDO (OI)</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            <div>
+              <label className={labelStyle}>Esfera</label>
+              <select name="oi_esfera" value={formData.oi_esfera} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {esferas.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Cilindro</label>
+              <select name="oi_cilindro" value={formData.oi_cilindro} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {cilindros.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Eje</label>
+              <select name="oi_eje" value={formData.oi_eje} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {ejes.map((val) => <option key={val} value={val}>{val}°</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>ADD</label>
+              <select name="oi_add" value={formData.oi_add} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {addList.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>DP</label>
+              <select name="oi_dp" value={formData.oi_dp} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {dp.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>ALT</label>
+              <select name="oi_alt" value={formData.oi_alt} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {alt.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Prisma</label>
+              <select name="oi_prisma" value={formData.oi_prisma} onChange={handleChange} className={inputStyle}>
+                <option value="">-</option>
+                {prismas.map((val) => <option key={val} value={val}>{val}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* LENTE Y FACTURACIÓN */}
+      <div>
+        <h3 className="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-2">
+          Lente y Facturación
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div>
+            <label className={labelStyle}>Tipo de Lente</label>
+              <select name="tipo_lente" value={formData.tipo_lente} onChange={handleChange} className={inputStyle}>
+                <option value="">Laboratorio</option>
+                  <option>Monofocal</option>
+                  <option>Bifocal</option>
+                  <option>Progresivo</option>
+                  <option>Ocupacional</option>
+                  <option>Contacto</option>
+              </select>
+          </div>
+          <div>
+            <label className={labelStyle}>Tratamiento</label>
+            <input type="text" name="tratamiento_lente" value={formData.tratamiento_lente} onChange={handleChange} className={inputStyle} placeholder="Ej: Antirreflejo..." />
+          </div>
+          <div>
+            <label className={labelStyle}>Laboratorio</label>
+              <select name="laboratorio" value={formData.laboratorio} onChange={handleChange} className={inputStyle}>
+                <option value="">Laboratorio</option>
+                <option>Essilor</option>
+                <option>Hoya</option>
+                <option>Zeiss</option>
+                <option>Genérico</option>
+                <option>Otro</option>
+              </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/30 p-2.5 rounded border border-slate-800/80">
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name="registrar_precio"
+                checked={formData.registrar_precio}
+                onChange={handleChange}
+                className="toggle-brand"
+              />
+              <span className="text-xs font-medium text-slate-300">¿Registrar Precio / Valor de Venta?</span>
+            </label>
+
+            {formData.registrar_precio && (
+              <div className="pl-6 animate-fade-in-up">
+                <label className={labelStyle}>Precio ($) *</label>
+                <input
+                  required
+                  type="number"
+                  name="precio"
+                  value={formData.precio}
+                  onChange={handleChange}
+                  className={inputStyle}
+                  placeholder="Monto de la venta"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                name="tiene_factura"
+                checked={formData.tiene_factura}
+                onChange={handleChange}
+                className="toggle-brand"
+              />
+              <span className="text-xs font-medium text-slate-300">¿Tiene Factura?</span>
+            </label>
+
+            {formData.tiene_factura && (
+              <div className="pl-6 animate-fade-in-up">
+                <label className={labelStyle}>Número de Factura *</label>
+                <input
+                  required
+                  type="text"
+                  name="numero_factura"
+                  value={formData.numero_factura}
+                  onChange={handleChange}
+                  className={inputStyle}
+                  placeholder="Ej: FAC-00123"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* OBSERVACIONES Y SUBMIT */}
+      <div>
+        <label className={labelStyle}>Observaciones</label>
+        <textarea name="observaciones" rows="2" value={formData.observaciones} onChange={handleChange} className={inputStyle} />
+      </div>
+
+      <div className="pt-2 flex justify-end">
         <button
+          type="submit"
           disabled={loading}
-          className="btn-primary animate-pulse-amber animation-delay-1100"
+          className="px-5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded text-xs transition-colors shadow-glow-amber disabled:opacity-50"
         >
-          {loading ? "Guardando..." : "Registrar cliente"}
+          {loading ? "Guardando..." : "Guardar Cliente"}
         </button>
-      </form>
-    </div>
+      </div>
+
+    </form>
   );
 }

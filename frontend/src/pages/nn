@@ -1,0 +1,16 @@
+
+      {/* TEMA */}
+      <div className="bg-panel border border-brand/10 p-6 rounded-xl shadow-lg mb-6">
+        <h2 className="text-xl font-semibold mb-4">Tema de la App</h2>
+        <p className="text-brand-dark mb-4">Elige el modo visual o tono de la página.</p>
+        <select 
+          value={tema} 
+          onChange={e => cambiarTema(e.target.value)} 
+          className="p-2 rounded border border-brand/20 bg-panel text-brand"
+        >
+          <option value="claro">Modo Claro</option>
+          <option value="oscuro">Modo Oscuro</option>
+          <option value="dorado">Modo Dorado (Fondo negro, letras doradas)</option> {/* Nueva opción */}
+        </select>
+        <p className="mt-2 text-sm text-green-600">Tema actual: {tema}</p> {/* Feedback visual */}
+      </div>

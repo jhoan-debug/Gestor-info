@@ -6,24 +6,24 @@ from datetime import date, datetime
 class ClienteBase(BaseModel):
     nombre: str
     apellido: str
-    documento: str
+    documento: Optional[str] = None
     telefono: Optional[str] = None
     correo: Optional[str] = None
     direccion: Optional[str] = None
     observaciones: Optional[str] = None
-    od_esfera: Optional[float] = None
-    od_cilindro: Optional[float] = None
-    od_eje: Optional[float] = None
-    od_add: Optional[float] = None
-    od_dp: Optional[float] = None
-    od_alt: Optional[float] = None
+    od_esfera: Optional[str] = None
+    od_cilindro: Optional[str] = None
+    od_eje: Optional[str] = None
+    od_add: Optional[str] = None
+    od_dp: Optional[str] = None
+    od_alt: Optional[str] = None
     od_prisma: Optional[str] = None
-    oi_esfera: Optional[float] = None
-    oi_cilindro: Optional[float] = None
-    oi_eje: Optional[float] = None
-    oi_add: Optional[float] = None
-    oi_dp: Optional[float] = None
-    oi_alt: Optional[float] = None
+    oi_esfera: Optional[str] = None
+    oi_cilindro: Optional[str] = None
+    oi_eje: Optional[str] = None
+    oi_add: Optional[str] = None
+    oi_dp: Optional[str] = None
+    oi_alt: Optional[str] = None
     oi_prisma: Optional[str] = None
     tipo_lente: Optional[str] = None
     tratamiento_lente: Optional[str] = None
@@ -31,6 +31,7 @@ class ClienteBase(BaseModel):
     precio: Optional[int] = None
     tiene_factura: Optional[bool] = False
     numero_factura: Optional[str] = None
+    archivo: Optional[str] = None
     fecha_cumpleanos: Optional[date] = None
 
     class Config:

@@ -9,7 +9,7 @@ import os
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASS = os.getenv("DB_PASS", "2006")  # Asegúrate de que coincida con tu password real de PostgreSQL
 DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5433")  # <── CAMBIADO: Puerto 5433 según tu configuración
+DB_PORT = os.getenv("DB_PORT", "5432")  # <── CAMBIADO: Puerto 5433 según tu configuración
 DB_NAME = os.getenv("DB_NAME", "optica")
 
 # URL de conexión a la base

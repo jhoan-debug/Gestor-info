@@ -1,8 +1,15 @@
 from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean
 from sqlalchemy.sql import func
-from app.db_pg import Base 
+from app.database.db_pg import Base 
 
-# Modelo Cliente: representa la tabla 'clientes' en la base de datos.
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario = Column(String, nullable=False, unique=True)
+    contrasena = Column("pass", String, nullable=False)
+
 class Cliente(Base):
     __tablename__ = "clientes"
 
@@ -10,7 +17,7 @@ class Cliente(Base):
     nombre = Column(String(100), nullable=False)
     apellido = Column(String(100), nullable=False)
     correo = Column(String, nullable=True)
-    documento = Column(String, nullable=False, unique=True)
+    documento = Column(String, nullable=True)
     telefono = Column(String(20), nullable=True)
     direccion = Column(String(150), nullable=True)
     formula_od = Column(String(50), nullable=True)
@@ -48,3 +55,4 @@ class Cliente(Base):
     archivo = Column(String, nullable=True)
     fecha_cumpleanos = Column(Date, nullable=True) 
     fecha_registro = Column(DateTime(timezone=True), server_default=func.now())
+
